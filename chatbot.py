@@ -10,7 +10,7 @@ print(os.getenv("OPENAI_API_KEY"))
 client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 
 #user prompt for speaking to chatbot
-user_prompt = input("Hello I am a chatbot from OpenAI. I can assist you with\n1.Checking weather in your location\n2.Currency conversion\n3.Language translating\nWhat would you like to do? (Type your selection")
+
 
 # Create a list of messages to send to the API
 message_list = [
@@ -19,24 +19,21 @@ message_list = [
         "content": "You are an assistant used for three main functions: weather reporting by a given location, currency conversion between two currencies, and translating given text into a specified language."
         #may specify to have user select function first, ie. what would you like to do today?: 1,2, or 3"
     },
-    {
-        "role": "user", 
-        "content": user_prompt
-    }
+    
 ]
 
 #tool function definitions
 #return simulated weather data temp and condition description with given location, ##celsius and fahrenheit
-def get_weather(location:str, unit_f:float, unit_c:float, desc:str):
-    return f"The current weather in {location} is {unit_f} degrees fahrenheit/{unit_c} degrees celsius. Throughout the day you should expect {desc}. Please continue to check the report as conditions may change"
+def get_weather(location:str):
+    return f"The current weather in {location} is 80 degrees fahrenheit/35 degrees celsius. Throughout the day you should expect moderate winds. Please continue to check the report as conditions may change"
 
 #return converted currency given a float number amount with currency type, and desired currency type
-def convert_currency(amount:float, from_currency:str, to_currency:str, conversion:float):
-    return f"{amount, from_currency} is equal to {conversion, to_currency}."
+def convert_currency(amount:str, from_currency:str, to_currency:str):
+    return f"{amount, from_currency} is equal to 12 {to_currency}."
 
 #return translation given text and desired language
-def translate_text(text:str, target_language:str, translation:str):
-    return f"{translation}"
+def translate_text(text:str, target_language:str):
+    return "hola"
 
 ##variable to store available tools/functions to navigate response with error handling
 available_tools = {
@@ -59,14 +56,6 @@ tools = [
                         "type": "string",
                         "description": "The city and state to get weather for e.g. San Francisco, CA"
                     },
-                    "unit_f": {
-                        "type": "float", #"string"
-                        "enum": ["fahrenheit"]
-                    },
-                    "unit_c": {
-                        "type": "float", #"string"
-                        "enum": ["celsius"]
-                    },
                 },
                 "required": ["location"]
             }
@@ -81,7 +70,7 @@ tools = [
                 "type": "object",
                 "properties": {
                     "amount": {
-                        "type": "float",
+                        "type": "string",
                         "description": "The amount to convert"
                     },
                     "from_currency": {
@@ -138,6 +127,10 @@ def process_user_input(user_input: str) -> str:
     Process user input and return appropriate response using tool calls.
     """
     try:
+        message_list.append({
+            "role":"user",
+            "content":user_input,
+        })
         # Create chat completion with tool calls
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -170,4 +163,16 @@ def process_user_input(user_input: str) -> str:
     except Exception as e:
         return f"Error processing request: {str(e)}"
 
-
+if __name__ == "__main__":
+    # Example user inputs
+    test_inputs = [
+        "What's the weather like in Albany, NY?",
+        "Convert 100 USD to Yen",
+        "Translate 'Hello, how are you?' to japanese" 
+    ]
+    
+    print("Testing...")
+    for input_text in test_inputs:
+        print(f"\nUser Input: {input_text}")
+        response = process_user_input(input_text)
+        print(f"Response: {response}")
