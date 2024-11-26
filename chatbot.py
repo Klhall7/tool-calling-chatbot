@@ -139,6 +139,9 @@ def process_user_input(user_input: str) -> str:
             tool_choice="auto",
             temperature=0.0
         )
+        message_list.append(
+            response.choices[0].message
+        )
 
         # navigate message content
         response_message = response.choices[0].message
@@ -151,12 +154,28 @@ def process_user_input(user_input: str) -> str:
                 function_name = tool_call.function.name
                 function_args = json.loads(tool_call.function.arguments)
                 
+                
                 # function call with formatted response
                 if function_name in available_tools:
                     function_response = available_tools[function_name](**function_args)
-                    final_response.append(f"{function_name} result: {function_response}")
-                
-            return "\n".join(final_response)
+                    message_list.append({
+                    "role":"tool",
+                    "content":function_response,
+                    "tool_call_id":tool_call.id
+                })
+            
+            #make output more conversational, not just data     
+            completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=message_list,
+            temperature=0.0,
+            )
+            message_list.append({
+                    "role":"assistant",
+                    "content":completion.choices[0].message.content,
+                    
+                })
+            return completion.choices[0].message.content
         else:
             return response_message.content
 
